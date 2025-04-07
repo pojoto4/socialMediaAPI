@@ -1,41 +1,47 @@
-import db from '../config/connection.js';
-import { Course, Student } from '../models/index.js';
-import cleanDB from './cleanDB.js';
-import { getRandomName, getRandomAssignments } from './data.js';
+import db from "../config/connection.js";
+import { User, Thought } from "../models/index.js";
+import cleanDB from "./cleanDB.js";
+import { getRandomName, getRandomThought } from "./data.js";
 try {
     await db();
     await cleanDB();
-    // Create empty array to hold the students
-    const students = [];
-    // Loop 20 times -- add students to the students array
+    const users = [];
+    const thoughts = [];
     for (let i = 0; i < 20; i++) {
-        // Get some random assignment objects using a helper function that we imported from ./data
-        const assignments = getRandomAssignments(20);
         const fullName = getRandomName();
-        const first = fullName.split(' ')[0];
-        const last = fullName.split(' ')[1];
-        const github = `${first}${Math.floor(Math.random() * (99 - 18 + 1) + 18)}`;
-        students.push({
-            first,
-            last,
-            github,
-            assignments,
-        });
+        const first = fullName.split(" ")[0];
+        const username = `${first}${Math.floor(Math.random() * (99 - 18 + 1) + 18)}`;
+        const email = `${username}@example.com`;
+        users.push({ username, email });
     }
-    // Add students to the collection and await the results
-    const studentData = await Student.create(students);
-    // Add courses to the collection and await the results
-    await Course.create({
-        name: 'UCLA',
-        inPerson: false,
-        students: [...studentData.map(({ _id }) => _id)],
-    });
-    // Log out the seed data to indicate what should appear in the database
-    console.table(students);
-    console.info('Seeding complete! 🌱');
+    const userData = await User.create(users);
+    for (let i = 0; i < 15; i++) {
+        const randomUserIndex = Math.floor(Math.random() * userData.length);
+        const { _id: userId, username } = userData[randomUserIndex];
+        const thoughtText = getRandomThought();
+        thoughts.push({ thoughtText, username, userId });
+    }
+    const thoughtData = await Thought.create(thoughts);
+    for (const thought of thoughtData) {
+        await User.findOneAndUpdate({ _id: thought.userId }, { $push: { thoughts: thought._id } });
+    }
+    for (let i = 0; i < userData.length; i++) {
+        const friendCount = Math.floor(Math.random() * 3) + 1;
+        const friendIndices = new Set();
+        while (friendIndices.size < friendCount) {
+            const randomIndex = Math.floor(Math.random() * userData.length);
+            if (randomIndex !== i) {
+                friendIndices.add(randomIndex);
+            }
+        }
+        const friendIds = Array.from(friendIndices).map((index) => userData[index]._id);
+        await User.findOneAndUpdate({ _id: userData[i]._id }, { $addToSet: { friends: { $each: friendIds } } });
+    }
+    console.table(users);
+    console.info("Seeding complete! 🌱");
     process.exit(0);
 }
 catch (error) {
-    console.error('Error seeding database:', error);
+    console.error("Error seeding database:", error);
     process.exit(1);
 }
