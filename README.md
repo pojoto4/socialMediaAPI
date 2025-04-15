@@ -35,7 +35,7 @@ License: MIT
 
 ## Tests
 
-You can try different user ids, thought ids, friend ids and reaction ids to see what's updated and where.
+You can try different user ids, thought ids, friend ids and reaction ids to see what's updated and where, here's a video showing how it's done: https://app.screencastify.com/v3/watch/1kfPc5BDJQOuTc3h4UJH
 
 ## Questions
 
